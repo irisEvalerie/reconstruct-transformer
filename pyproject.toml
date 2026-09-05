@@ -12,6 +12,7 @@ authors = [{ name = "IrisGValerie", email = "25722055@bjtu.edu.cn" }]
 dependencies = [
     "matplotlib>=3.10,<4",
     "numpy>=2.2,<3",
+    "pyyaml>=6.0,<7",
     "torch>=2.11,<3",
     "tqdm>=4.67,<5",
 ]

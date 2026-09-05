@@ -15,7 +15,7 @@ model:
   num_heads: 4
   ffn_hidden: 128
   num_layers: 2
-  dropout: 0.1
+  dropout: 0.0          # disabled: the tiny copy task overfits without regularization
   max_len: 32
 
 optimizer:
@@ -26,9 +26,10 @@ optimizer:
   eps: 1.0e-9
 
 training:
-  epochs: 20
+  epochs: 60
   steps: null          # optional: run a fixed number of steps instead of epochs
   grad_clip_norm: 1.0
+  warmup_steps: 400
 
 device: auto           # 'auto' selects CUDA when available, otherwise CPU
 output_dir: outputs/copy_task
