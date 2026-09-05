@@ -26,7 +26,7 @@ def test_copy_task_overfits_on_cpu(tmp_path) -> None:
         model_max_len=16,
         learning_rate=1e-3,
         warmup_steps=100,
-        epochs=150,
+        epochs=300,
         device='cpu',
         output_dir=str(tmp_path),
     )
