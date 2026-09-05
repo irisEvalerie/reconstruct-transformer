@@ -19,7 +19,7 @@ import torch
 import yaml
 from torch import nn
 
-from .data import PAD_IDX, CopyTaskDataset, make_copy_dataloader
+from .data import BOS_IDX, EOS_IDX, PAD_IDX, CopyTaskDataset, make_copy_dataloader
 from .transformer import Transformer
 
 
@@ -267,6 +267,114 @@ def load_checkpoint(
     model.load_state_dict(checkpoint['model_state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
     return checkpoint['config'], checkpoint['epoch'], checkpoint['metrics']
+
+
+def load_model_from_checkpoint(
+    path: str | Path,
+    device: torch.device | None = None,
+) -> tuple[Transformer, TrainConfig, int, dict[str, Any]]:
+    '''Rebuild a model and its config from a saved checkpoint.'''
+    checkpoint = torch.load(path, map_location='cpu', weights_only=False)
+    config = TrainConfig(**checkpoint['config'])
+    model = build_model(config)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    if device is not None:
+        model = model.to(device)
+    return model, config, checkpoint['epoch'], checkpoint['metrics']
+
+
+def greedy_decode(
+    model: Transformer,
+    src: torch.Tensor,
+    max_len: int,
+    device: torch.device | None = None,
+) -> torch.Tensor:
+    '''Autoregressively decode a single source sequence with greedy search.
+
+    Only a single example is supported: ``src`` must have shape
+    ``(1, src_len)``. Generation starts from ``BOS_IDX``; at each step the model
+    sees only the prefix generated so far (so no future token can leak), and the
+    argmax of the final position is appended. Decoding stops early at
+    ``EOS_IDX`` or after ``max_len`` tokens. The returned tensor holds the
+    predicted tokens (including ``EOS_IDX`` when it terminates) and has shape
+    ``(pred_len,)``.
+    '''
+    if src.dim() != 2 or src.size(0) != 1:
+        raise ValueError(
+            'src must have shape (1, src_len); batch decoding is not supported'
+        )
+    if device is None:
+        device = src.device
+    model.eval()
+    src = src.to(device)
+
+    decoder_input = torch.tensor([[BOS_IDX]], dtype=torch.long, device=device)
+    predicted: list[int] = []
+    with torch.no_grad():
+        for _ in range(max_len):
+            logits = model(src, decoder_input)
+            next_token = int(logits[0, -1].argmax(dim=-1).item())
+            predicted.append(next_token)
+            if next_token == EOS_IDX:
+                break
+            decoder_input = torch.cat(
+                (
+                    decoder_input,
+                    torch.tensor([[next_token]], dtype=torch.long, device=device),
+                ),
+                dim=1,
+            )
+    return torch.tensor(predicted, dtype=torch.long, device=device)
+
+
+def evaluate(
+    model: Transformer,
+    loader: torch.utils.data.DataLoader,
+    device: torch.device,
+) -> dict[str, float]:
+    '''Greedy-decode every example and report token and exact-match accuracy.
+
+    Padding positions are ignored. Token accuracy counts individual correct
+    tokens; exact-match accuracy counts examples whose full decoded sequence
+    equals the unpadded labels.
+    '''
+    model.eval()
+    total_tokens = 0
+    total_correct = 0
+    total_examples = 0
+    total_exact = 0
+    with torch.no_grad():
+        for batch in loader:
+            source = batch['source'].to(device)
+            labels = batch['labels'].to(device)
+            for i in range(source.size(0)):
+                gold = labels[i]
+                mask = gold != PAD_IDX
+                n = int(mask.sum().item())
+                if n == 0:
+                    continue
+                prediction = greedy_decode(
+                    model, source[i : i + 1], max_len=n, device=device
+                )
+                gold = gold[:n]
+                total_tokens += n
+                total_examples += 1
+                exact = prediction.size(0) == n
+                for j in range(min(n, prediction.size(0))):
+                    if prediction[j].item() == gold[j].item():
+                        total_correct += 1
+                    else:
+                        exact = False
+                if exact:
+                    total_exact += 1
+    token_accuracy = total_correct / total_tokens if total_tokens else 0.0
+    exact_match_accuracy = total_exact / total_examples if total_examples else 0.0
+    return {
+        'token_accuracy': token_accuracy,
+        'exact_match_accuracy': exact_match_accuracy,
+    }
 
 
 def train(config: TrainConfig) -> dict[str, Any]:
