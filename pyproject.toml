@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A tested, from-first-principles reconstruction of the encoder-decoder Transformer."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-authors = [{ name = "IrisGValerie", email = "25722055@bjtu.edu.cn" }]
+authors = [{ name = "IrisGValerie" }]
 dependencies = [
     "matplotlib>=3.10,<4",
     "numpy>=2.2,<3",

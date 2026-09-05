@@ -77,10 +77,9 @@ class Decoder(nn.Module):
     has shape ``(batch, memory_len, d_model)``, and logits have shape
     ``(batch, target_len, vocab_size)``.
 
-    The output projection is intentionally kept here rather than in the
-    top-level model, so ``Decoder`` alone yields logits and can be tested in
-    isolation. Move the module with ``module.to(device)``; no device argument
-    is accepted at construction time.
+    The output projection lives here (not in the top-level model) so ``Decoder``
+    alone yields logits and can be tested in isolation. Move the module with
+    ``module.to(device)``; no device argument is accepted at construction time.
     '''
 
     def __init__(

@@ -20,8 +20,8 @@ def make_pad_mask(
     '''Return a key-padding mask shaped ``(batch, 1, query_len, key_len)``.
 
     ``True`` permits attention and ``False`` blocks a padded key. Query padding
-    rows are deliberately not hidden: making an entire query row invalid makes
-    ordinary softmax ill-defined. Outputs for padded query tokens must instead
+    rows are not masked: masking an entire query row would make the softmax
+    ill-defined. Outputs for padded query tokens must instead
     be excluded from the training objective with the loss ``ignore_index``.
 
     If every key in an example is padding, the returned rows are all ``False``;

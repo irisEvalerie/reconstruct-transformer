@@ -1,8 +1,8 @@
 '''Training, evaluation, and checkpointing for the copy task.
 
-This module keeps the whole training story in one place: configuration, seeding,
-device selection, model/dataloader construction, the standard teacher-forcing
-training loop, and checkpoint save/load. Decoding is added in a later stage.
+Configuration, seeding, device selection, model/dataloader construction, the
+teacher-forcing training loop, greedy decoding, evaluation, and checkpoint
+save/load all live here.
 '''
 
 from __future__ import annotations
@@ -115,9 +115,9 @@ def load_config(path: str | Path) -> TrainConfig:
 def seed_everything(seed: int) -> None:
     '''Seed Python, NumPy, and PyTorch for reproducible runs.
 
-    The model uses only matmul, softmax, and layer normalization, so cuDNN
-    determinism flags are deliberately not touched; they add no reproducibility
-    benefit here and can slow down training on some GPUs.
+    The model uses only matmul, softmax, and layer normalization, so the cuDNN
+    determinism flags are left alone — they add nothing here (no cuDNN ops) and
+    can slow some GPUs down.
     '''
     random.seed(seed)
     numpy.random.seed(seed)

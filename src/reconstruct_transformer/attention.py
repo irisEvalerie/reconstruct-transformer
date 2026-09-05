@@ -60,9 +60,8 @@ class MultiHeadAttention(nn.Module):
 
     Projects query, key, and value into ``num_heads`` independent subspaces,
     runs :func:`scaled_dot_product_attention` once across every head, then
-    concatenates the heads and applies the output projection. This class
-    performs no softmax or masking of its own; those responsibilities live in
-    the core attention function.
+    concatenates the heads and applies the output projection. No softmax or
+    masking lives here — that's handled by ``scaled_dot_product_attention``.
 
     Inputs and outputs use ``(batch, seq_len, d_model)``. ``d_model`` must be
     divisible by ``num_heads``, giving each head dimension

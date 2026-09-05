@@ -15,8 +15,8 @@ class PositionwiseFeedForward(nn.Module):
     linear layers operate only on the final dimension, all leading batch and
     sequence dimensions are processed independently with shared parameters.
 
-    Residual connections and layer normalization intentionally belong to the
-    encoder and decoder layers, not this module.
+    Residual connections and layer normalization belong to the encoder and
+    decoder layers, not here.
     '''
 
     def __init__(

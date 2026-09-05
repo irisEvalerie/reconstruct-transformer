@@ -7,6 +7,6 @@
 - `masks.py`：padding mask 和 causal mask
 - `encoder.py`：编码器层及其堆叠
 - `decoder.py`：解码器层及其堆叠
-- `transformer.py`：顶层 Transformer 与输出投影
+- `transformer.py`：顶层 Transformer，组装 mask 并调用编解码器
 
 模块实现时统一约定张量布局为 `(batch, sequence, d_model)`。

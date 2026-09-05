@@ -1,7 +1,7 @@
 # Reconstruct Transformer
 
-从最基础的张量运算出发，复现 [Vaswani et al. (2017) *Attention Is All You
-Need*](https://arxiv.org/abs/1706.03762) 中的 Encoder–Decoder Transformer。
+用 PyTorch 从零实现了 [Vaswani et al. (2017) *Attention Is All You
+Need*](https://arxiv.org/abs/1706.03762) 的 Encoder–Decoder Transformer。
 
 全程**不使用** `torch.nn.Transformer`、`torch.nn.MultiheadAttention`、
 `torch.nn.functional.scaled_dot_product_attention`、Hugging Face `transformers`

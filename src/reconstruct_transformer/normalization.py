@@ -16,7 +16,7 @@ class LayerNorm(nn.Module):
 
     The default ``eps=1e-5`` follows common LayerNorm practice and is large
     enough to improve stability for float32 and mixed-precision computation.
-    This implementation intentionally does not call ``torch.nn.LayerNorm``.
+    This does not call ``torch.nn.LayerNorm``.
     '''
 
     def __init__(self, normalized_shape: int, eps: float = 1e-5) -> None:
