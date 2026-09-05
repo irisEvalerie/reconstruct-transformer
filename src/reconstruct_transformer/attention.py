@@ -4,6 +4,57 @@ import torch
 import torch.nn as nn
 
 
+def scaled_dot_product_attention(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    value: torch.Tensor,
+    mask: torch.Tensor | None = None,
+    dropout: torch.nn.Module | None = None,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    '''Compute ``softmax(Q @ K^T / sqrt(d_k)) @ V`` directly.
+
+    Input shapes are ``(..., query_len, d_k)``, ``(..., key_len, d_k)``, and
+    ``(..., key_len, d_v)``. A boolean mask must broadcast to
+    ``(..., query_len, key_len)``; ``True`` permits attention. The returned
+    output and weights have shapes ``(..., query_len, d_v)`` and
+    ``(..., query_len, key_len)``. Fully masked rows produce zero weights and
+    zero output. Returned weights include the optional dropout operation.
+    '''
+    if query.ndim < 2 or key.ndim < 2 or value.ndim < 2:
+        raise ValueError('query, key, and value must each have at least 2 dimensions')
+    if query.size(-1) != key.size(-1):
+        raise ValueError('query and key must have the same final dimension d_k')
+    if key.size(-2) != value.size(-2):
+        raise ValueError('key and value must have the same sequence length')
+    d_k = query.size(-1)
+    if d_k <= 0:
+        raise ValueError('query and key dimension d_k must be greater than zero')
+    if mask is not None and mask.dtype != torch.bool:
+        raise TypeError('mask must have dtype torch.bool')
+    if dropout is not None and not isinstance(dropout, torch.nn.Module):
+        raise TypeError('dropout must be a torch.nn.Module or None')
+
+    scores = query @ key.transpose(-2, -1)
+    scores = scores / math.sqrt(d_k)
+    allowed: torch.Tensor | None = None
+    if mask is not None:
+        try:
+            allowed = torch.broadcast_to(mask.to(scores.device), scores.shape)
+        except RuntimeError as error:
+            raise ValueError('mask cannot broadcast to attention scores') from error
+        fully_masked = ~allowed.any(dim=-1, keepdim=True)
+        scores = scores.masked_fill(~allowed, float('-inf'))
+        scores = scores.masked_fill(fully_masked, 0.0)
+
+    attention_weights = torch.softmax(scores, dim=-1)
+    if allowed is not None:
+        attention_weights = attention_weights.masked_fill(~allowed, 0.0)
+    if dropout is not None:
+        attention_weights = dropout(attention_weights)
+    output = attention_weights @ value
+    return output, attention_weights
+
+
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, n_head, dropout=0.1):
         super().__init__()

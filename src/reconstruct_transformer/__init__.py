@@ -1,6 +1,6 @@
 """A from-scratch implementation of the original Transformer."""
 
-from .attention import MultiHeadAttention
+from .attention import MultiHeadAttention, scaled_dot_product_attention
 from .decoder import Decoder, DecoderLayer
 from .embedding import PositionalEmbedding, TokenEmbedding, TransformerEmbedding
 from .encoder import Encoder, EncoderLayer
@@ -20,4 +20,5 @@ __all__ = [
     "TokenEmbedding",
     "Transformer",
     "TransformerEmbedding",
+    'scaled_dot_product_attention',
 ]
